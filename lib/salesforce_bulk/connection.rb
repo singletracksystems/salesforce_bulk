@@ -24,7 +24,7 @@ module SalesforceBulk
     #private
 
     def login()
-
+p "!!! login()"
       xml = '<?xml version="1.0" encoding="utf-8" ?>'
       xml += "<env:Envelope xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\""
       xml += "    xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""
@@ -38,8 +38,9 @@ module SalesforceBulk
       xml += "</env:Envelope>"
       
       headers = Hash['Content-Type' => 'text/xml; charset=utf-8', 'SOAPAction' => 'login']
-
-      response = post_xml(@@LOGIN_HOST, @@LOGIN_PATH, xml, headers)
+p "!!! xml: #{xml}"
+      response = post_xml(@@LOGIN_HOST, @@LOGIN_PATH, xml, headers, true)
+p "!!! response: #{response}"
       # response_parsed = XmlSimple.xml_in(response)
       response_parsed = parse_response response
 
@@ -50,7 +51,7 @@ module SalesforceBulk
       @@INSTANCE_HOST = "#{@instance}.salesforce.com"
     end
 
-    def post_xml(host, path, xml, headers)
+    def post_xml(host, path, xml, headers, debug = false)
 
       host = host || @@INSTANCE_HOST
 
@@ -59,7 +60,7 @@ module SalesforceBulk
         path = "#{@@PATH_PREFIX}#{path}"
       end
 
-      https(host).post(path, xml, headers).body
+      https(host, debug).post(path, xml, headers).body
     end
 
     def get_request(host, path, headers)
@@ -73,9 +74,10 @@ module SalesforceBulk
       https(host).get(path, headers).body
     end
 
-    def https(host)
+    def https(host, debug = false)
       req = Net::HTTP.new(host, 443)
       req.use_ssl = true
+      req.set_debug_output $stdout if debug
       req.verify_mode = OpenSSL::SSL::VERIFY_NONE
       req
     end
@@ -90,7 +92,7 @@ module SalesforceBulk
 
       if response.downcase.include?("faultstring") || response.downcase.include?("exceptionmessage")
         begin
-          
+p "!!! error: #{response}"          
           if response.downcase.include?("faultstring")
             error_message = response_parsed["Body"][0]["Fault"][0]["faultstring"][0]
           elsif response.downcase.include?("exceptionmessage")
