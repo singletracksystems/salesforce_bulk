@@ -16,7 +16,7 @@ module SalesforceBulk
       @@API_VERSION = api_version
       @@LOGIN_PATH = "/services/Soap/u/#{@@API_VERSION}"
       @@PATH_PREFIX = "/services/async/#{@@API_VERSION}/"
-      @@LOGIN_HOST = 'test.salesforce.com' if in_sandbox
+      @@LOGIN_HOST = in_sandbox ? 'test.salesforce.com' : 'login.salesforce.com'
 
       login()
     end
@@ -24,7 +24,7 @@ module SalesforceBulk
     #private
 
     def login()
-p "!!! login()"
+
       xml = '<?xml version="1.0" encoding="utf-8" ?>'
       xml += "<env:Envelope xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\""
       xml += "    xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""
@@ -38,9 +38,9 @@ p "!!! login()"
       xml += "</env:Envelope>"
       
       headers = Hash['Content-Type' => 'text/xml; charset=utf-8', 'SOAPAction' => 'login']
-p "!!! xml: #{xml}"
+
       response = post_xml(@@LOGIN_HOST, @@LOGIN_PATH, xml, headers, true)
-p "!!! response: #{response}"
+
       # response_parsed = XmlSimple.xml_in(response)
       response_parsed = parse_response response
 
@@ -91,8 +91,7 @@ p "!!! response: #{response}"
       response_parsed = XmlSimple.xml_in(response)
 
       if response.downcase.include?("faultstring") || response.downcase.include?("exceptionmessage")
-        begin
-p "!!! error: #{response}"          
+        begin         
           if response.downcase.include?("faultstring")
             error_message = response_parsed["Body"][0]["Fault"][0]["faultstring"][0]
           elsif response.downcase.include?("exceptionmessage")
