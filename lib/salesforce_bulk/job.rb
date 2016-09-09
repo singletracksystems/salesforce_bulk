@@ -4,13 +4,14 @@ module SalesforceBulk
 
     attr :result
 
-    def initialize(operation, sobject, records, external_field, connection)
+    def initialize(operation, sobject, records, external_field, connection, concurrencyMode = nil)
 
       @@operation = operation
       @@sobject = sobject
       @@external_field = external_field
       @@records = records
       @@connection = connection
+      @@concurrencyMode = concurrencyMode || 'Parallel'
       @@XML_HEADER = '<?xml version="1.0" encoding="utf-8" ?>'
 
       # @result = {"errors" => [], "success" => nil, "records" => [], "raw" => nil, "message" => 'The job has been queued.'}
@@ -22,6 +23,7 @@ module SalesforceBulk
       xml = "#{@@XML_HEADER}<jobInfo xmlns=\"http://www.force.com/2009/06/asyncapi/dataload\">"
       xml += "<operation>#{@@operation}</operation>"
       xml += "<object>#{@@sobject}</object>"
+      xml += "<concurrencyMode>#{@@concurrencyMode}</concurrencyMode>"
       if !@@external_field.nil? # This only happens on upsert
         xml += "<externalIdFieldName>#{@@external_field}</externalIdFieldName>"
       end
