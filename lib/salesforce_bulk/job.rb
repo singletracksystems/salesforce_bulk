@@ -23,10 +23,10 @@ module SalesforceBulk
       xml = "#{@@XML_HEADER}<jobInfo xmlns=\"http://www.force.com/2009/06/asyncapi/dataload\">"
       xml += "<operation>#{@@operation}</operation>"
       xml += "<object>#{@@sobject}</object>"
-      xml += "<concurrencyMode>#{@@concurrencyMode}</concurrencyMode>"
       if !@@external_field.nil? # This only happens on upsert
         xml += "<externalIdFieldName>#{@@external_field}</externalIdFieldName>"
       end
+      xml += "<concurrencyMode>#{@@concurrencyMode}</concurrencyMode>"
       xml += "<contentType>CSV</contentType>"
       xml += "</jobInfo>"
 
