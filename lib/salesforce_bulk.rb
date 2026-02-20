@@ -11,9 +11,25 @@ module SalesforceBulk
 
     @@SALESFORCE_API_VERSION = '54.0'
 
-    def initialize(username, password, in_sandbox=false, concurrencyMode = nil)
-      @connection = SalesforceBulk::Connection.new(username, password, @@SALESFORCE_API_VERSION, in_sandbox)
+    def self.new_with_credentials(username, password, in_sandbox=false, concurrencyMode = nil)
+      api = self.new(concurrencyMode)
+      api.connection = SalesforceBulk::Connection.new_with_credentials(username, password, @@SALESFORCE_API_VERSION, in_sandbox)
+      api
+    end
+
+    def self.new_with_token(token, domain, concurrencyMode = nil)
+      api = self.new(concurrencyMode)
+      api.connection = SalesforceBulk::Connection.new_with_token(token, domain, @@SALESFORCE_API_VERSION)
+      api
+    end
+
+    def initialize(concurrencyMode = nil)
       @concurrencyMode = concurrencyMode
+    end
+
+    def connection=(connection) 
+      @connection = connection
+      self
     end
 
     def upsert(sobject, records, external_field, wait=false)
