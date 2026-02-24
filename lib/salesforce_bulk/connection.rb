@@ -5,26 +5,63 @@ module SalesforceBulk
     @@XML_HEADER = '<?xml version="1.0" encoding="utf-8" ?>'
     @@API_VERSION = nil
     @@LOGIN_HOST = 'login.salesforce.com'
-    @@INSTANCE_HOST = nil # Gets set in login()
+    @INSTANCE_HOST = nil # Gets set in login()
 
-    def initialize(username, password, api_version, in_sandbox)
-      @username = username
-      @password = password
+    def self.new_with_credentials(username, password, api_version, in_sandbox = false)
+      connection = self.new(api_version)
+      connection.username = username
+      connection.password = password
+      connection.in_sandbox = in_sandbox
+      @@LOGIN_HOST = in_sandbox ? 'test.salesforce.com' : 'login.salesforce.com'
+      connection.login()
+      connection
+    end
+
+    def self.new_with_token(token, domain, api_version)
+      connection = self.new(api_version)
+      connection.session_id = token
+      connection.server_url = domain
+      @@INSTANCE_HOST = "#{connection.instance}.salesforce.com"
+      connection
+    end
+
+    def initialize(api_version)
       @session_id = nil
       @server_url = nil
       @instance = nil
       @@API_VERSION = api_version
       @@LOGIN_PATH = "/services/Soap/u/#{@@API_VERSION}"
       @@PATH_PREFIX = "/services/async/#{@@API_VERSION}/"
-      @@LOGIN_HOST = in_sandbox ? 'test.salesforce.com' : 'login.salesforce.com'
+    end
 
-      login()
+    def session_id=(session_id)
+      @session_id = session_id
+    end
+
+    def server_url=(server_url)
+      @server_url = server_url
+    end
+
+
+    def username=(username)
+      @username = username
+    end
+
+    def password=(password)
+      @password = password
+    end
+
+    def in_sandbox=(in_sandbox)
+      @in_sandbox = in_sandbox
+    end
+
+    def instance()
+      @instance ||= parse_instance()
     end
 
     #private
 
     def login()
-
       xml = '<?xml version="1.0" encoding="utf-8" ?>'
       xml += "<env:Envelope xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\""
       xml += "    xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""
@@ -36,7 +73,6 @@ module SalesforceBulk
       xml += "    </n1:login>"
       xml += "  </env:Body>"
       xml += "</env:Envelope>"
-
       headers = Hash['Content-Type' => 'text/xml; charset=utf-8', 'SOAPAction' => 'login']
 
       response = post_xml(@@LOGIN_HOST, @@LOGIN_PATH, xml, headers, true)
@@ -46,8 +82,7 @@ module SalesforceBulk
 
       @session_id = response_parsed['Body'][0]['loginResponse'][0]['result'][0]['sessionId'][0]
       @server_url = response_parsed['Body'][0]['loginResponse'][0]['result'][0]['serverUrl'][0]
-      @instance = parse_instance()
-      @@INSTANCE_HOST = "#{@instance}.salesforce.com"
+      @@INSTANCE_HOST = "#{instance()}.salesforce.com"
     end
 
     def post_xml(host, path, xml, headers, debug = false)
